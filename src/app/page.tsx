@@ -10,6 +10,8 @@ import {
   Heart,
   Sparkles,
   Gift,
+  Share2,
+  Check,
 } from "lucide-react";
 import FloatingPetals from "@/components/FloatingPetals";
 import IntroGiftModal from "@/components/IntroGiftModal";
@@ -22,6 +24,7 @@ import CoupleBucketAndPolaroid from "@/components/CoupleBucketAndPolaroid";
 import WaxSealLetterAndGuestbook from "@/components/WaxSealLetterAndGuestbook";
 import { sound } from "@/lib/sound";
 import { fireHeartConfetti, fireSideCannons } from "@/lib/confetti";
+import { copyTextWithFallback, encodeSharePayload } from "@/lib/shareState";
 
 const DEFAULT_LETTER = `푸푸야, 지유야! 11월 1일, 두 사람이 드디어 연인이 된 걸 진심으로 축하해!! 🥳🎉
 
@@ -37,6 +40,33 @@ export default function HomePage() {
   const [letterBody, setLetterBody] = useState<string>(DEFAULT_LETTER);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [bgmPlaying, setBgmPlaying] = useState(false);
+  const [headerCopied, setHeaderCopied] = useState(false);
+
+  const handleHeaderShare = () => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.origin + window.location.pathname);
+    url.searchParams.set("from", senderName);
+    url.searchParams.set("msg", letterBody);
+    url.searchParams.set("date", startDateStr);
+
+    try {
+      const rawNotes = localStorage.getItem("lovepotal_guestbook_v2");
+      const rawBuckets = localStorage.getItem("lovepotal_buckets_v2");
+      const rawCaption = localStorage.getItem("lovepotal_polaroid_caption_v2");
+      const encoded = encodeSharePayload({
+        notes: rawNotes ? JSON.parse(rawNotes) : undefined,
+        buckets: rawBuckets ? JSON.parse(rawBuckets) : undefined,
+        caption: rawCaption || undefined,
+      });
+      if (encoded) url.searchParams.set("s", encoded);
+    } catch {}
+
+    copyTextWithFallback(url.toString());
+    setHeaderCopied(true);
+    sound.playChime();
+    fireHeartConfetti();
+    setTimeout(() => setHeaderCopied(false), 2800);
+  };
 
   useEffect(() => {
     let initialDate = "2026-11-01";
@@ -171,11 +201,20 @@ export default function HomePage() {
             </button>
 
             <button
+              onClick={handleHeaderShare}
+              className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-extrabold text-rose-600 ring-1 ring-rose-200 transition hover:bg-rose-100"
+              title="현재 설정과 롤링페이퍼·버킷리스트가 담긴 카톡 공유 링크 복사"
+            >
+              {headerCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+              <span>{headerCopied ? "링크 복사됨!" : "링크 공유"}</span>
+            </button>
+
+            <button
               onClick={triggerPartyFireworks}
               className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 px-3 py-1.5 text-xs font-black text-white shadow-sm transition hover:brightness-105 active:scale-95"
             >
               <PartyPopper className="h-3.5 w-3.5" />
-              <span>축하 폭죽!</span>
+              <span className="hidden sm:inline">축하 폭죽!</span>
             </button>
           </div>
         </div>
