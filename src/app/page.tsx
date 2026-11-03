@@ -111,7 +111,7 @@ export default function HomePage() {
   const [senderName, setSenderName] = useState<string>("너희를 아끼는 단짝 친구");
   const [letterBody, setLetterBody] = useState<string>(DEFAULT_LETTER);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [bgmPlaying, setBgmPlaying] = useState(false);
+  const [bgmPlaying, setBgmPlaying] = useState(true);
   const [headerCopied, setHeaderCopied] = useState(false);
 
   // Navigation state: current chapter index & view mode ("chapter" vs "all")
@@ -174,6 +174,9 @@ export default function HomePage() {
     setStartDateStr(initialDate);
     setSenderName(initialSender);
     setLetterBody(initialMsg);
+
+    // Start BGM automatically on load & first interaction
+    sound.initAutoplayBgm((playing) => setBgmPlaying(playing));
   }, []);
 
   const handleChangeStartDate = (newDate: string) => {
@@ -240,6 +243,10 @@ export default function HomePage() {
           senderName={senderName}
           onOpen={() => {
             setShowIntro(false);
+            if (soundEnabled && !sound.bgmPlaying) {
+              sound.startBgm();
+              setBgmPlaying(true);
+            }
           }}
         />
       )}

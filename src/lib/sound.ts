@@ -5,11 +5,14 @@ class SoundManager {
   public enabled: boolean = true;
   private bgmInterval: ReturnType<typeof setInterval> | null = null;
   public bgmPlaying: boolean = false;
+  private unlockBound: boolean = false;
 
   private getContext(): AudioContext | null {
     if (!this.enabled || typeof window === "undefined") return null;
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
@@ -18,6 +21,34 @@ class SoundManager {
       this.ctx.resume().catch(() => {});
     }
     return this.ctx;
+  }
+
+  public initAutoplayBgm(onStateChange?: (playing: boolean) => void) {
+    if (typeof window === "undefined") return;
+    this.startBgm();
+    onStateChange?.(true);
+
+    if (!this.unlockBound) {
+      this.unlockBound = true;
+      const unlockAudio = () => {
+        if (!this.enabled) return;
+        const c = this.getContext();
+        if (c && c.state === "suspended") {
+          c.resume().catch(() => {});
+        }
+        if (!this.bgmPlaying && this.enabled) {
+          this.startBgm();
+          onStateChange?.(true);
+        }
+        window.removeEventListener("pointerdown", unlockAudio);
+        window.removeEventListener("touchstart", unlockAudio);
+        window.removeEventListener("keydown", unlockAudio);
+      };
+
+      window.addEventListener("pointerdown", unlockAudio, { passive: true });
+      window.addEventListener("touchstart", unlockAudio, { passive: true });
+      window.addEventListener("keydown", unlockAudio, { passive: true });
+    }
   }
 
   public playPop(pitchOffset = 0) {
@@ -45,7 +76,6 @@ class SoundManager {
     const ctx = this.getContext();
     if (!ctx) return;
 
-    // Low thump + cute chime
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "triangle";
@@ -60,7 +90,6 @@ class SoundManager {
     osc.start();
     osc.stop(ctx.currentTime + 0.18);
 
-    // Sparkle overtone
     setTimeout(() => this.playChime([659.25, 880]), 80);
   }
 
@@ -122,12 +151,32 @@ class SoundManager {
     if (!ctx) return;
     this.bgmPlaying = true;
 
-    // Cute music box melody (Twinkle / Romantic Lullaby style in C major)
-    const melody = [
-      523.25, 659.25, 783.99, 1046.5, 987.77, 783.99,
-      698.46, 880.0, 783.99, 659.25, 587.33, 783.99,
-      523.25, 659.25, 783.99, 1046.5, 880.0, 1046.5,
-      987.77, 783.99, 880.0, 987.77, 1046.5, 0,
+    // Romantic Music Box Melody + Warm Harmony Bass Note
+    const melody: Array<[number, number]> = [
+      [523.25, 261.63],
+      [659.25, 0],
+      [783.99, 392.0],
+      [1046.5, 0],
+      [987.77, 329.63],
+      [783.99, 0],
+      [698.46, 349.23],
+      [880.0, 0],
+      [783.99, 392.0],
+      [659.25, 0],
+      [587.33, 293.66],
+      [783.99, 0],
+      [523.25, 261.63],
+      [659.25, 0],
+      [783.99, 392.0],
+      [1046.5, 0],
+      [880.0, 349.23],
+      [1046.5, 0],
+      [987.77, 392.0],
+      [783.99, 0],
+      [880.0, 329.63],
+      [987.77, 392.0],
+      [1046.5, 523.25],
+      [0, 0],
     ];
     let step = 0;
 
@@ -135,24 +184,38 @@ class SoundManager {
       if (!this.bgmPlaying || !this.enabled) return;
       const c = this.getContext();
       if (!c) return;
-      const freq = melody[step % melody.length];
+      const [mainFreq, bassFreq] = melody[step % melody.length];
       step++;
-      if (freq > 0) {
+
+      if (mainFreq > 0) {
         const osc = c.createOscillator();
         const gain = c.createGain();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, c.currentTime);
-        gain.gain.setValueAtTime(0.045, c.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0008, c.currentTime + 0.55);
+        osc.frequency.setValueAtTime(mainFreq, c.currentTime);
+        gain.gain.setValueAtTime(0.055, c.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0008, c.currentTime + 0.65);
         osc.connect(gain);
         gain.connect(c.destination);
         osc.start();
-        osc.stop(c.currentTime + 0.55);
+        osc.stop(c.currentTime + 0.65);
+      }
+
+      if (bassFreq > 0) {
+        const bOsc = c.createOscillator();
+        const bGain = c.createGain();
+        bOsc.type = "triangle";
+        bOsc.frequency.setValueAtTime(bassFreq, c.currentTime);
+        bGain.gain.setValueAtTime(0.03, c.currentTime);
+        bGain.gain.exponentialRampToValueAtTime(0.0008, c.currentTime + 0.75);
+        bOsc.connect(bGain);
+        bGain.connect(c.destination);
+        bOsc.start();
+        bOsc.stop(c.currentTime + 0.75);
       }
     };
 
     playNextNote();
-    this.bgmInterval = setInterval(playNextNote, 420);
+    this.bgmInterval = setInterval(playNextNote, 410);
   }
 
   public stopBgm() {
