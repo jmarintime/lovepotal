@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+:root {
+  --bg-cream: #fffdf9;
+  --bg-pink: #fff0f4;
+}
+
+body {
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  background: radial-gradient(circle at 20% 10%, #ffe8f0 0%, #fffbf7 48%, #ffeef4 100%);
+  color: #3e2723;
+  overflow-x: hidden;
+}
+
+@keyframes petalFall {
+  0% {
+    transform: translateY(-40px) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(50vh) translateX(22px) rotate(180deg);
+  }
+  85% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(105vh) translateX(-18px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.petal-fall {
+  animation-name: petalFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes touchPop {
+  0% {
+    transform: scale(0.5) translateY(0);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1.35) translateY(-28px);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1) translateY(-52px);
+    opacity: 0;
+  }
+}
+
+.touch-pop {
+  animation: touchPop 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom cute scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #fff5f7;
+}
+::-webkit-scrollbar-thumb {
+  background: #ff9eb8;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6993;
+}
